@@ -29,4 +29,13 @@
         android:layout_centerHorizontal="true"
         android:text="Recording"
         android:visibility="invisible"/>
+
+    <Button
+        android:id="@+id/playButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/recordButton"
+        android:text="Play"
+        android:onClick="playAudio"/>
 </RelativeLayout>
