@@ -92,7 +92,7 @@ public class Main extends AppCompatActivity {
 
         //create a instance of audio track to record
         int myBufferSizeTrack = AudioTrack.getMinBufferSize(SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING);
-        track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, myBufferSizeTrack, AudioTrack.MODE_STREAM);
+        track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, myBufferSizeTrack, AudioTrack.MODE_STATIC);
         track.setPlaybackRate(SAMPLERATE);
 
         if(track.getState() == AudioTrack.STATE_INITIALIZED){
