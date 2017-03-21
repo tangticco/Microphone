@@ -46,7 +46,6 @@ public class Main extends AppCompatActivity {
 
     //create some class wide objects waiting for use
     private AudioRecord recorder = null;
-    private AudioTrack track = null;
     private boolean isRecording = false;
     private Thread recordingThread = null;
     private ArrayList<byte[]> tempFile = new ArrayList<byte[]>();
@@ -85,12 +84,37 @@ public class Main extends AppCompatActivity {
     public boolean onOptionsItemSelected(android.view.MenuItem item){
 
         switch(item.getItemId()){
-            case R.id.menu_test_item1:
-                playAudio();
+            case R.id.menu_play:
+
+                //check if the user is still recording
+                if(!isRecording){
+
+                    //create a thread to play the audio
+                    Thread playingThread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            playAudio(tempFile);
+                        }
+                    }, "AudioPlaying Thread");
+                    playingThread.start();
+                }
+
                 break;
-            case R.id.menu_test_item2:
+
+
+            case R.id.menu_save:
+
+                //create a thread to save the audio data
+                Thread savingThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        writeAudioDataToFile();
+                    }
+                }, "AudioSaving Thread");
+                savingThread.start();
                 break;
-            case R.id.menu_test_item3:
+
+            case R.id.menu_recent:
                 break;
 
         }
@@ -98,6 +122,7 @@ public class Main extends AppCompatActivity {
         return true;
     }
 
+    //Controllers
     /**
      * A controller to control whether to record or not
      * @param v
@@ -112,40 +137,42 @@ public class Main extends AppCompatActivity {
 
     }
 
+
+
+
+    //Methods
+
+
     /**
-     * A Controller to control whether to play Audio or not
+     * A method to control whether to play Audio or not
      */
-    public void playAudio(){
+    public static void playAudio(ArrayList<byte[]> tempFile){
 
-        //check if the user is still recording
-        if(!isRecording){
 
-            //create a instance of audio track to record
-            track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, BUFFERSIZE, AudioTrack.MODE_STREAM);
-            track.setPlaybackRate(SAMPLERATE);
+        //create a instance of audio track to record
+        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, BUFFERSIZE, AudioTrack.MODE_STREAM);
+        track.setPlaybackRate(SAMPLERATE);
 
-            //check if the track is not correctly created
-            if(track != null){
+        //check if the track is not correctly created
+        if(track != null){
 
-                try{
-                    track.play();
+            try{
+                track.play();
 
-                    //push the audio data to the audio track
-                    int index = 0;
-                    while(index < tempFile.size()){
-                        byte[] audioPieceByte = tempFile.get(index);
-                        track.write(audioPieceByte, 0 , BUFFERSIZE);
-                        index += 1;
-                    }
-
-                }catch ( IllegalStateException r){
-                    Log.d("Error: ", "The AudioTrack is not properly set to play");
+                //push the audio data to the audio track
+                int index = 0;
+                while(index < tempFile.size()){
+                    byte[] audioPieceByte = tempFile.get(index);
+                    track.write(audioPieceByte, 0 , BUFFERSIZE);
+                    index += 1;
                 }
 
+            }catch ( IllegalStateException r){
+                Log.d("Error: ", "The AudioTrack is not properly set to play");
             }
-        }else{
-            Log.d("Error:" , "The app is still recording");
+
         }
+
     }
 
     /**
