@@ -1,6 +1,7 @@
 package edu.fandm.ztang.microphone;
 
 import android.content.Intent;
+
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -29,23 +30,27 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.lang.Object;
 
 public class Main extends AppCompatActivity {
 
+    //create some constant attribute of audio data
     private static final int SAMPLERATE = 8000;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int TRACK_CHANNELS = AudioFormat.CHANNEL_OUT_MONO;
     private static final int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    private static int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
-    private static int BytesPerElement = 2; // 2 bytes in 16bit format
+    private static final int BUFFERSIZE = AudioRecord.getMinBufferSize(SAMPLERATE, RECORDER_CHANNELS, AUDIO_ENCODING);
+
+    //create some class wide objects waiting for use
     private AudioRecord recorder = null;
     private AudioTrack track = null;
     private boolean isRecording = false;
     private Thread recordingThread = null;
-    private int myBUfferSizeRecord = AudioRecord.getMinBufferSize(SAMPLERATE, RECORDER_CHANNELS, AUDIO_ENCODING);
-    private int myBufferSizeTrack = AudioTrack.getMinBufferSize(SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING);
     private ArrayList<byte[]> tempFile = new ArrayList<byte[]>();
+    private int fileIndex = 1;
 
 
     public void onCreate(Bundle savedInstanceState){
@@ -71,10 +76,13 @@ public class Main extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * Menu item click listener
+     * @param item
+     * @return
+     */
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item){
-
-
 
         switch(item.getItemId()){
             case R.id.menu_test_item1:
@@ -96,7 +104,6 @@ public class Main extends AppCompatActivity {
      */
     public void recordAudio(View v){
 
-
         if (!isRecording){
             startRecording();
         }else{
@@ -104,7 +111,6 @@ public class Main extends AppCompatActivity {
         }
 
     }
-
 
     /**
      * A Controller to control whether to play Audio or not
@@ -115,7 +121,7 @@ public class Main extends AppCompatActivity {
         if(!isRecording){
 
             //create a instance of audio track to record
-            track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, myBUfferSizeRecord, AudioTrack.MODE_STREAM);
+            track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, BUFFERSIZE, AudioTrack.MODE_STREAM);
             track.setPlaybackRate(SAMPLERATE);
 
             //check if the track is not correctly created
@@ -128,7 +134,7 @@ public class Main extends AppCompatActivity {
                     int index = 0;
                     while(index < tempFile.size()){
                         byte[] audioPieceByte = tempFile.get(index);
-                        track.write(audioPieceByte, 0 , myBUfferSizeRecord);
+                        track.write(audioPieceByte, 0 , BUFFERSIZE);
                         index += 1;
                     }
 
@@ -148,11 +154,7 @@ public class Main extends AppCompatActivity {
     private void startRecording(){
 
         //create a instance of recorder and start recording
-
-        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                SAMPLERATE, RECORDER_CHANNELS,
-                AUDIO_ENCODING, myBUfferSizeRecord);
-
+        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLERATE, RECORDER_CHANNELS, AUDIO_ENCODING, BUFFERSIZE);
         recorder.startRecording();
 
 
@@ -188,12 +190,14 @@ public class Main extends AppCompatActivity {
         }
     }
 
-
+    /**
+     * Write the recording audio data to temporary buffer
+     */
     private void writeAudioDataToBuffer(){
         while (isRecording) {
             // gets the voice output from microphone to byte format
-            byte[] audioPieceByte = new byte[myBUfferSizeRecord];
-            recorder.read(audioPieceByte, 0, myBUfferSizeRecord);
+            byte[] audioPieceByte = new byte[BUFFERSIZE];
+            recorder.read(audioPieceByte, 0, BUFFERSIZE);
             tempFile.add(audioPieceByte);
 
             //test
@@ -203,33 +207,31 @@ public class Main extends AppCompatActivity {
 
     }
 
-
     /**
      * Write the audio data to file
      */
     private void writeAudioDataToFile() {
-        // Write the output audio in byte
+        //TODO comment
 
+        //set up the file name
+        String currentDateTimeString = DateFormat.getDateTimeInstance().format(new Date());
+        String fileName = String.valueOf(fileIndex) + ". Record Audio" + currentDateTimeString;
+
+        // Create a new File
         File filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-        File newFile = new File(filePath, "Test");
+        File newFile = new File(filePath,fileName );
 
-
-        FileOutputStream os;
         try {
-            os = new FileOutputStream(newFile);
+            FileOutputStream os = new FileOutputStream(newFile);
 
-            while (isRecording) {
+            while (!tempFile.isEmpty()) {
                 // gets the voice output from microphone to byte format
-                byte[] audioPieceByte = new byte[myBUfferSizeRecord];
-                recorder.read(audioPieceByte, 0,myBUfferSizeRecord);
+                byte[] audioPieceByte = tempFile.remove(0);
+
 
                 try {
-                    // // writes the data to file from buffer
-                    // // stores the voice buffer
-
-                    System.out.println("Short wirting to file" + audioPieceByte.toString());
-                    tempFile.add(audioPieceByte);
-                    os.write(audioPieceByte, 0, myBUfferSizeRecord);
+                    // stores the voice buffer to file
+                    os.write(audioPieceByte, 0, BUFFERSIZE);
 
                 } catch (IOException e) {
                     e.printStackTrace();

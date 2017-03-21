@@ -8,18 +8,6 @@
     tools:layout_editor_absoluteY="81dp"
     tools:layout_editor_absoluteX="0dp">
 
-    <Button
-        android:id="@+id/recordButton"
-        android:layout_width="wrap_content"
-        android:layout_height="48dp"
-        android:text="Record"
-        tools:layout_editor_absoluteY="420dp"
-        android:onClick="recordAudio"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="55dp" />
 
     <TextView
         android:id="@+id/recording"
@@ -30,15 +18,18 @@
         android:text="Recording"
         android:visibility="invisible"/>
 
-    <Button
-        android:id="@+id/button2"
-        android:onClick="playAudio"
+
+    <ToggleButton
+        android:id="@+id/recordButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/recording"
-        android:layout_alignParentEnd="true"
-        android:layout_marginBottom="167dp"
-        android:text="Plsy" />
+        android:text="ToggleButton"
+        android:textOff="Record"
+        android:textOn="Stop"
+        android:onClick="recordAudio"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="52dp" />
 
 
 </RelativeLayout>
