@@ -78,6 +78,7 @@ public class Main extends AppCompatActivity {
 
         switch(item.getItemId()){
             case R.id.menu_test_item1:
+                playAudio();
                 break;
             case R.id.menu_test_item2:
                 break;
@@ -105,26 +106,30 @@ public class Main extends AppCompatActivity {
     }
 
 
+    /**
+     * A Controller to control whether to play Audio or not
+     */
+    public void playAudio(){
 
-
-    public void playAudio(View v){
-
-        //check if the user is still recording Audio
+        //check if the user is still recording
         if(!isRecording){
+
             //create a instance of audio track to record
             track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, myBUfferSizeRecord, AudioTrack.MODE_STREAM);
             track.setPlaybackRate(SAMPLERATE);
 
-
+            //check if the track is not correctly created
             if(track != null){
 
-                //play the audio using the tempFile and the AudioTrack
                 try{
                     track.play();
-                    Log.d("Progress: ", "it should play now");
-                    while(!tempFile.isEmpty()){
-                        byte[] audioPieceByte = tempFile.get(0);
+
+                    //push the audio data to the audio track
+                    int index = 0;
+                    while(index < tempFile.size()){
+                        byte[] audioPieceByte = tempFile.get(index);
                         track.write(audioPieceByte, 0 , myBUfferSizeRecord);
+                        index += 1;
                     }
 
                 }catch ( IllegalStateException r){
@@ -158,7 +163,7 @@ public class Main extends AppCompatActivity {
         recordingThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                writeAudioDataToFile();
+                writeAudioDataToBuffer();
             }
         }, "AudioRecorder Thread");
         recordingThread.start();
@@ -181,6 +186,21 @@ public class Main extends AppCompatActivity {
             recorder = null;
             recordingThread = null;
         }
+    }
+
+
+    private void writeAudioDataToBuffer(){
+        while (isRecording) {
+            // gets the voice output from microphone to byte format
+            byte[] audioPieceByte = new byte[myBUfferSizeRecord];
+            recorder.read(audioPieceByte, 0, myBUfferSizeRecord);
+            tempFile.add(audioPieceByte);
+
+            //test
+            System.out.println("Short wirting to file" + audioPieceByte.toString());
+
+        }
+
     }
 
 
