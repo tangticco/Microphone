@@ -201,7 +201,7 @@ public class Main extends AppCompatActivity {
 
         File filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
         File newFile = new File(filePath, "Test");
-        byte[] audioPieceByte = new byte[myBUfferSizeRecord];
+
 
         FileOutputStream os;
         try {
@@ -209,7 +209,7 @@ public class Main extends AppCompatActivity {
 
             while (isRecording) {
                 // gets the voice output from microphone to byte format
-
+                byte[] audioPieceByte = new byte[myBUfferSizeRecord];
                 recorder.read(audioPieceByte, 0,myBUfferSizeRecord);
 
                 try {
