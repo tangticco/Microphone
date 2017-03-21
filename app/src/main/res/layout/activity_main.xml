@@ -31,11 +31,14 @@
         android:visibility="invisible"/>
 
     <Button
-        android:id="@+id/playButton"
+        android:id="@+id/button2"
+        android:onClick="playAudio"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignStart="@+id/recordButton"
-        android:text="Play"
-        android:onClick="playAudio"/>
+        android:layout_above="@+id/recording"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="167dp"
+        android:text="Plsy" />
+
+
 </RelativeLayout>

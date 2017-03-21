@@ -1,5 +1,6 @@
 package edu.fandm.ztang.microphone;
 
+import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -16,6 +17,8 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -40,17 +43,50 @@ public class Main extends AppCompatActivity {
     private AudioTrack track = null;
     private boolean isRecording = false;
     private Thread recordingThread = null;
-
-
+    private int myBUfferSizeRecord = AudioRecord.getMinBufferSize(SAMPLERATE, RECORDER_CHANNELS, AUDIO_ENCODING);
+    private int myBufferSizeTrack = AudioTrack.getMinBufferSize(SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING);
+    private ArrayList<byte[]> tempFile = new ArrayList<byte[]>();
 
 
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //request audio input permission
-        writeToExternal();
+        //request audio input permission and external storage permission
 
+        getPermissions();
+
+
+    }
+
+    /**
+     * Create a menu
+     * @param m
+     * @return
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu m){
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_demo, m);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(android.view.MenuItem item){
+
+
+
+        switch(item.getItemId()){
+            case R.id.menu_test_item1:
+                break;
+            case R.id.menu_test_item2:
+                break;
+            case R.id.menu_test_item3:
+                break;
+
+        }
+
+        return true;
     }
 
     /**
@@ -59,7 +95,6 @@ public class Main extends AppCompatActivity {
      */
     public void recordAudio(View v){
 
-        getAudioPermission();
 
         if (!isRecording){
             startRecording();
@@ -69,12 +104,45 @@ public class Main extends AppCompatActivity {
 
     }
 
+
+
     public void playAudio(View v){
         if(!isRecording){
-            if(track != null){
-                Log.d("Progress: ", "it should play now");
-                track.play();
+
+
+            //create a instance of audio track to record
+
+            track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, myBUfferSizeRecord, AudioTrack.MODE_STREAM);
+            track.setPlaybackRate(SAMPLERATE);
+
+            if(track.getState() == AudioTrack.STATE_INITIALIZED){
+                Log.d("Error: ", "AudioTrack Uninitialized");
             }
+
+
+
+            if(track != null){
+
+
+                File filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+                File newFile = new File(filePath, "Test");
+
+
+                try{
+                    track.play();
+                    Log.d("Progress: ", "it should play now");
+                    while(!tempFile.isEmpty()){
+                        byte[] audioPieceByte = tempFile.remove(0);
+                        track.write(audioPieceByte, 0 , myBUfferSizeRecord);
+                    }
+
+                }catch ( IllegalStateException r){
+                    Log.d("Error: ", "The AudioTrack is not properly set to play");
+                }
+
+            }
+        }else{
+            Log.d("Error:" , "The app is still recording");
         }
     }
 
@@ -84,20 +152,13 @@ public class Main extends AppCompatActivity {
     private void startRecording(){
 
         //create a instance of recorder and start recording
+
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                 SAMPLERATE, RECORDER_CHANNELS,
-                AUDIO_ENCODING, BufferElements2Rec * BytesPerElement);
+                AUDIO_ENCODING, myBUfferSizeRecord);
 
         recorder.startRecording();
 
-        //create a instance of audio track to record
-        int myBufferSizeTrack = AudioTrack.getMinBufferSize(SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING);
-        track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, myBufferSizeTrack, AudioTrack.MODE_STATIC);
-        track.setPlaybackRate(SAMPLERATE);
-
-        if(track.getState() == AudioTrack.STATE_INITIALIZED){
-            Log.d("Error: ", "AudioTrack Uninitialized");
-        }
 
         //start a new thread to write audio data
         isRecording = true;
@@ -131,6 +192,7 @@ public class Main extends AppCompatActivity {
         }
     }
 
+
     /**
      * Write the audio data to file
      */
@@ -139,7 +201,7 @@ public class Main extends AppCompatActivity {
 
         File filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
         File newFile = new File(filePath, "Test");
-        short sData[] = new short[BufferElements2Rec];
+        byte[] audioPieceByte = new byte[myBUfferSizeRecord];
 
         FileOutputStream os;
         try {
@@ -148,16 +210,15 @@ public class Main extends AppCompatActivity {
             while (isRecording) {
                 // gets the voice output from microphone to byte format
 
-                recorder.read(sData, 0, BufferElements2Rec);
+                recorder.read(audioPieceByte, 0,myBUfferSizeRecord);
 
                 try {
                     // // writes the data to file from buffer
                     // // stores the voice buffer
 
-                    byte bData[] = short2byte(sData);
-                    System.out.println("Short wirting to file" + bData.toString());
-                    track.write(bData, 0, BufferElements2Rec * BytesPerElement);
-                    os.write(bData, 0, BufferElements2Rec * BytesPerElement);
+                    System.out.println("Short wirting to file" + audioPieceByte.toString());
+                    tempFile.add(audioPieceByte);
+                    os.write(audioPieceByte, 0, myBUfferSizeRecord);
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -170,7 +231,7 @@ public class Main extends AppCompatActivity {
             }
 
 
-            Log.d("audiotrack is : ", track.toString());
+
         } catch (FileNotFoundException e) {
             Log.d("Error: " , " NO os was created.");
         }
@@ -216,19 +277,12 @@ public class Main extends AppCompatActivity {
     /**
      * Get the permission of writing to external storage
      */
-    public void writeToExternal(){
+    public void getPermissions(){
 
-        String[] perms = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        String[] perms = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO};
         ActivityCompat.requestPermissions(this, perms, 1);
+
     }
 
-    /**
-     * Get the permission of get audio input
-     */
-    public void getAudioPermission(){
-
-        String[] perms = new String[]{Manifest.permission.RECORD_AUDIO};
-        ActivityCompat.requestPermissions(this, perms, 1);
-    }
 
 }
