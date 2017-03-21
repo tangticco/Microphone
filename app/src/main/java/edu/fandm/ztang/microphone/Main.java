@@ -106,33 +106,24 @@ public class Main extends AppCompatActivity {
 
 
 
+
     public void playAudio(View v){
+
+        //check if the user is still recording Audio
         if(!isRecording){
-
-
             //create a instance of audio track to record
-
             track = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLERATE, TRACK_CHANNELS, AUDIO_ENCODING, myBUfferSizeRecord, AudioTrack.MODE_STREAM);
             track.setPlaybackRate(SAMPLERATE);
-
-            if(track.getState() == AudioTrack.STATE_INITIALIZED){
-                Log.d("Error: ", "AudioTrack Uninitialized");
-            }
-
 
 
             if(track != null){
 
-
-                File filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-                File newFile = new File(filePath, "Test");
-
-
+                //play the audio using the tempFile and the AudioTrack
                 try{
                     track.play();
                     Log.d("Progress: ", "it should play now");
                     while(!tempFile.isEmpty()){
-                        byte[] audioPieceByte = tempFile.remove(0);
+                        byte[] audioPieceByte = tempFile.get(0);
                         track.write(audioPieceByte, 0 , myBUfferSizeRecord);
                     }
 
